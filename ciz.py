@@ -28,7 +28,7 @@ def ciz(sayfa, v):
     png = sayfa.locator('#k').screenshot(type='png')
     im = Image.open(io.BytesIO(png)).convert('RGB')
     cikti = io.BytesIO()
-    im.save(cikti, 'WEBP', quality=80, method=6)
+    im.save(cikti, 'WEBP', quality=72, method=6)
     return cikti.getvalue(), sonuc
 
 
