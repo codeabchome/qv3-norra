@@ -1,0 +1,43 @@
+name: k
+on:
+  schedule:
+    - cron: '41 */3 * * *'      # 3 saatte bir; bekleyen yoksa ~1 dk'da biter
+  workflow_dispatch:
+    inputs:
+      sinir:
+        description: 'Bu koşuda en fazla kaç kapak'
+        default: '400'
+permissions:
+  contents: read
+  actions: write      # canli tut: zamanlayıcı 60 gün kuralıyla kapanmasın
+  id-token: write     # OIDC: site bu depoyu jetonla tanır, gizli anahtar yok
+concurrency: { group: k, cancel-in-progress: false }
+jobs:
+  k:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      # Açık depoda 60 gün commit gelmezse GitHub zamanlanmış iş akışını kapatır.
+      # Her koşuda iş akışını yeniden "etkin" işaretlemek sayacı sıfırlar.
+      - name: Canli tut
+        continue-on-error: true
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/k.yml/enable"
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12', cache: pip }
+      - name: Bagimliliklar
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-noto-cjk
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Kapaklar
+        env:
+          SITE: ${{ secrets.SITE }}
+          YOL: /wp-json/dkr/v1/kapak
+          SINIR: ${{ github.event.inputs.sinir || '400' }}
+          ARA: '1.5'
+        run: |
+          [ -z "$SITE" ] && { echo "SITE tanimli degil, cikiliyor"; exit 0; }
+          python ciz.py calistir

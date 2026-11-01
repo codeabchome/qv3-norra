@@ -1,0 +1,49 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:'K Lora';src:url(fontlar/Lora.ttf);font-weight:400 700}
+@font-face{font-family:'K Naskh';src:url(fontlar/NotoNaskhArabic.ttf);font-weight:400 700}
+@font-face{font-family:'K Nastaliq';src:url(fontlar/NotoNastaliqUrdu.ttf);font-weight:400 700}
+@font-face{font-family:'K Bengali';src:url(fontlar/NotoSerifBengali.ttf);font-weight:400 700}
+@font-face{font-family:'K Devanagari';src:url(fontlar/NotoSerifDevanagari.ttf);font-weight:400 700}
+@font-face{font-family:'K Thai';src:url(fontlar/NotoSerifThai.ttf);font-weight:400 700}
+html,body{margin:0;padding:0;background:#000}
+#k{position:relative;width:1200px;height:675px;overflow:hidden;background:url(zemin.svg) center/cover no-repeat}
+#blok{position:absolute;top:80px;right:70px;width:540px;text-align:right}
+#e{color:#E8C97A;font-size:19px;font-weight:600;opacity:.95;white-space:nowrap}
+#c{width:64px;height:2px;background:#E8C97A;opacity:.7;margin:18px 0 18px auto}
+#b{color:#FBF3DD;font-weight:700;text-shadow:0 2px 18px rgba(4,14,28,.55);line-break:strict}
+</style></head>
+<body><div id="k"><div id="blok"><div id="e"></div><div id="c"></div><div id="b"></div></div></div>
+<script>
+// 1200×675 kapak: sağ üstte etiket + çizgi + başlık (en fazla 3 satır, gerekirse 4).
+const YAZI = {
+  ar:['K Naskh','arap'], ug:['K Naskh','arap'], fa:['K Naskh','arap'], ur:['K Nastaliq','arap'],
+  bn:['K Bengali','hint'], hi:['K Devanagari','hint'], th:['K Thai','tay'],
+  ja:['Noto Serif CJK JP','cjk'], zh:['Noto Serif CJK SC','cjk'], ko:['Noto Serif CJK KR','cjk'],
+};
+const yaziOf = d => YAZI[d] || ['K Lora','latin'];
+const aile = d => `'${yaziOf(d)[0]}','K Lora',serif`;
+
+async function ciz(v){
+  const dil=v.dil, [yazi,sis]=yaziOf(dil), rtl=!!v.rtl;
+  await Promise.all([document.fonts.load("40px 'K Lora'"), document.fonts.load(`40px '${yazi}'`, 'رؤيا स्वप्न স্বপ্ন ความฝัน 梦 夢')]);
+  await document.fonts.ready;
+  const e=document.getElementById('e'), b=document.getElementById('b');
+  for(const x of [e,b]){ x.lang=dil; x.dir=rtl?'rtl':'ltr'; x.style.fontFamily=aile(dil); x.style.textAlign='right'; }
+  const aralikli = sis==='latin'||sis==='cjk';
+  e.textContent=v.etiket||''; b.textContent=v.baslik;
+  e.style.letterSpacing=aralikli?'.22em':'0';
+  e.style.textTransform=sis==='latin'?'uppercase':'none';
+  e.style.fontSize=(aralikli?19:22)+'px';
+  if(sis!=='latin') b.style.textWrap='balance';
+  const kat = dil==='ur'?1.7:(sis==='hint'||sis==='tay'?1.4:(sis==='arap'?1.3:1.08));
+  let pt=70, n=1;
+  const dene=(p,enf)=>{ pt=p; b.style.fontSize=p+'px'; b.style.lineHeight=Math.round(p*kat)+'px';
+    n=Math.round(b.getBoundingClientRect().height/Math.round(p*kat)); return n<=enf && b.scrollWidth<=541; };
+  let ok=false;
+  for(let p=(dil==='ur'?58:70); p>=36; p-=2){ if(dene(p,3)){ ok=true; break; } }
+  if(!ok) for(let p=36; p>=28; p-=2){ if(dene(p,4)){ ok=true; break; } }
+  return {ok, punto:pt, satir:n};
+}
+</script></body></html>
