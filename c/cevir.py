@@ -16,6 +16,14 @@ ALLAH = {
     'ru': [('Богом', 'Аллахом'), ('Богу', 'Аллаху'), ('Бога', 'Аллаха'), ('Бог', 'Аллах')],
     'id': [('Tuhan', 'Allah')], 'ms': [('Tuhan', 'Allah')], 'zh': [('上帝', '安拉')],
 }
+# Âlim adları çeviriden ÖNCE uluslararası yazıma çevrilir (Google Türkçe yazımı olduğu gibi bırakıyor)
+ADLAR = [("Cafer-i Sâdık", "Ja'far al-Sadiq"), ("Cafer-i Sadık", "Ja'far al-Sadiq"), ("Câbir el-Mağribî", "Jabir al-Maghribi"),
+         ("Ebû Saîd el-Vâiz", "Abu Sa'id al-Wa'iz"), ("İbn Sîrîn", "Ibn Sirin"), ("İbn Sirin", "Ibn Sirin"),
+         ("Kirmânî", "al-Kirmani"), ("Nablusî", "al-Nabulsi")]
+def adlar(s):
+    for a, b in ADLAR: s = s.replace(a, b)
+    return s
+yapi = lambda h: re.findall(r'</?b\b', h)
 ist = {'istek': 0, 'karakter': 0, 'hata': [], 'allah_duzeltme': 0, 'tekrar': 0}
 
 def _get(dil, metinler):
@@ -44,6 +52,12 @@ def cevir(dil, metinler, sinir=5500):
             out += _get(dil, grup); grup, boy = [], 0
         grup.append(m); boy += b
     if grup: out += _get(dil, grup)
+    for i, (m, o) in enumerate(zip(metinler, out)):   # boş ya da <b> sayısı bozuk parça → tek başına yeniden
+        if (m.strip() and not o.strip()) or yapi(m) != yapi(o):
+            ist['tek_tekrar'] = ist.get('tek_tekrar', 0) + 1
+            o2 = _get(dil, [m])[0]
+            if o2.strip() and yapi(m) == yapi(o2): out[i] = o2
+            else: ist['hata'].append(f'{dil}: parca duzelmedi #{i}')
     return out
 
 def temizle(dil, s):
@@ -74,7 +88,7 @@ def main(girdi, cikti):
         for t in tr:
             bloklar = re.findall(r'<(h2|p)>(.*?)</\1>', t['icerik'], re.S)
             alan = [t['sembol'], t['baslik'], t['seo_baslik'], t['aciklama'], t['kisaca']]
-            c = [temizle(dil, x) for x in cevir(dil, alan + [b for _, b in bloklar])]
+            c = [temizle(dil, x) for x in cevir(dil, [adlar(x) for x in alan + [b for _, b in bloklar]])]
             sembol, baslik, seo, acik, kisa = c[:5]
             icerik = ''.join(f'<{tag}>{x}</{tag}>' for (tag, _), x in zip(bloklar, c[5:]))
             if len(seo) > 65:
