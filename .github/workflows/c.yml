@@ -1,0 +1,29 @@
+name: c
+on:
+  push:
+    paths: ['c/girdi/**']
+  workflow_dispatch:
+    inputs:
+      parti: { description: 'c/girdi/<parti>.json', default: 'parti-01' }
+permissions:
+  contents: write
+concurrency: { group: c, cancel-in-progress: false }
+jobs:
+  c:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Cevir
+        run: |
+          P="${{ github.event.inputs.parti }}"
+          [ -z "$P" ] && P=$(git diff --name-only HEAD~1 HEAD -- c/girdi | head -1 | xargs -r basename | sed 's/\.json$//')
+          [ -z "$P" ] && { echo "parti yok"; exit 0; }
+          python c/cevir.py "c/girdi/$P.json" "c/sonuc/$P/"
+      - name: Kaydet
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add c/sonuc && git commit -m "sonuc" && git pull --rebase -q && git push || echo "degisiklik yok"
