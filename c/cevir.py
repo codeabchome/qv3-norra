@@ -24,6 +24,11 @@ def adlar(s):
     for a, b in ADLAR: s = s.replace(a, b)
     return s
 yapi = lambda h: re.findall(r'</?b\b', h)
+EK = {'en': 'Islamic Dream Interpretation', 'de': 'Islamische Traumdeutung', 'fr': 'Interprétation islamique des rêves',
+      'es': 'Interpretación islámica de los sueños', 'it': 'Interpretazione islamica dei sogni', 'pt': 'Interpretação islâmica dos sonhos',
+      'nl': 'Islamitische droomuitleg', 'id': 'Tafsir Mimpi Islami', 'ms': 'Tafsiran Mimpi Islam', 'az': 'İslami yuxu yozumu',
+      'ru': 'Исламский сонник', 'ar': 'تفسير الأحلام الإسلامي', 'ur': 'اسلامی خوابوں کی تعبیر', 'ug': 'ئىسلامىي چۈش تەبىرى',
+      'bn': 'ইসলামিক স্বপ্নের ব্যাখ্যা', 'hi': 'इस्लामी स्वप्न व्याख्या', 'ja': 'イスラムの夢解釈', 'zh': '伊斯兰解梦', 'th': 'การตีความความฝันแบบอิสลาม'}
 ist = {'istek': 0, 'karakter': 0, 'hata': [], 'allah_duzeltme': 0, 'tekrar': 0}
 
 def _get(dil, metinler):
@@ -64,6 +69,8 @@ def temizle(dil, s):
     s = html.unescape(s).replace('​', '').strip()
     s = re.sub(r'\s*<b>\s*', ' <b>', s); s = re.sub(r'\s*</b>\s*', '</b> ', s)
     s = re.sub(r'^ <b>', '<b>', s); s = re.sub(r' {2,}', ' ', s).strip()
+    s = re.sub(r'\s+([,.;:!?،؛，。、])', r'\1', s)
+    s = re.sub(r'（[A-Za-z\' .-]+）', '', s)  # zh/ja: (Ibn Sirin) tekrarı
     for a, b in ALLAH.get(dil, []):
         s, n = re.subn(r'(?<![\w])' + re.escape(a) + r'(?![\w])', b, s); ist['allah_duzeltme'] += n
     return s
@@ -84,7 +91,7 @@ def main(girdi, cikti):
     t0 = time.time(); rapor = {}
     for dil in DILLER:
         d0 = time.time(); sonuc = []; slugs = set()
-        ek = cevir(dil, ['İslami Rüya Tabiri'])[0]
+        ek = EK[dil]
         for t in tr:
             bloklar = re.findall(r'<(h2|p)>(.*?)</\1>', t['icerik'], re.S)
             alan = [t['sembol'], t['baslik'], t['seo_baslik'], t['aciklama'], t['kisaca']]
