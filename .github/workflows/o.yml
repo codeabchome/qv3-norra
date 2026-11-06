@@ -1,0 +1,30 @@
+name: o
+on:
+  schedule:
+    - cron: '11 */3 * * *'      # kapak hattından (41 */3) yarım saat önce: çevrilen tabir aynı turda kapağını alır
+  workflow_dispatch:
+    inputs:
+      sinir: { description: 'Bu koşuda en fazla kaç tabir', default: '15' }
+permissions:
+  contents: read
+  actions: write
+  id-token: write
+concurrency: { group: o, cancel-in-progress: false }
+jobs:
+  o:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Canli tut
+        continue-on-error: true
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/o.yml/enable"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Cevir ve gonder
+        env:
+          SITE: ${{ secrets.SITE }}
+          SINIR: ${{ github.event.inputs.sinir || '15' }}
+          SURE: '45'
+        run: python c/oto.py
